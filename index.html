@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle Monitor Pro - Automotive Diagnostics</title>
+    <style>
+        * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #1a1a2e 100%);
+  color: #ffffff;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.dashboard {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Header Styles */
+.header {
+  margin-bottom: 32px;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.main-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  background: linear-gradient(45deg, #60a5fa, #06b6d4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient-shift 3s ease infinite;
+  background-size: 200% 200%;
+}
+
+.subtitle {
+  color: #9ca3af;
+  margin-top: 8px;
+  font-size: 1rem;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #10b981;
+  animation: pulse 2s infinite;
+}
+
+.status-indicator.connected {
+  background: #10b981;
+}
+
+.status-indicator.disconnected {
+  background: #ef4444;
+}
+
+.status-text {
+  color: #d1d5db;
+  font-size: 0.875rem;
+}
+
+.last-update {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #9ca3af;
+  font-size: 0.875rem;
+}
+
+/* Card Styles */
+.card {
+  background: rgba(17, 24, 39, 0.5);
+  border: 1px solid rgba(75, 85, 99, 0.3);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  animation: fade-in 0.5s ease-out;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  border-color: rgba(96, 165, 250, 0.3);
+}
+
+.card-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid rgba(75, 85, 99, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.card-header h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #f3f4f6;
+}
+
+.card-header i {
+  font-size: 1.25rem;
+  color: #60a5fa;
+}
+
+.card-content {
+  padding: 24px;
+}
+
+/* Main Grid */
+.main-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+/* Gauge Styles */
+.gauges-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 32px;
+}
+
+.gauge-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.gauge {
+  position: relative;
+  width: 128px;
+  height: 128px;
+  margin: 0 auto;
+}
+
+.gauge-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.gauge-bg {
+  fill: none;
+  stroke: #374151;
+  stroke-width: 8;
+}
+
+.gauge-fill {
+  fill: none;
+  stroke: #3b82f6;
+  stroke-width: 8;
+  stroke-linecap: round;
+  stroke-dasharray: 283;
+  stroke-dashoffset: 283;
+  transition: all 1s ease-out;
+}
+
+.gauge-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.gauge-icon {
+  font-size: 1.5rem;
+  margin-bottom: 4px;
+  color: #3b82f6;
+}
+
+.gauge-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #3b82f6;
+}
+
+.gauge-unit {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.gauge-label {
+  margin-top: 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #d1d5db;
+  text-align: center;
+}
+
+/* Temperature gauge colors */
+.temp-normal {
+  color: #10b981;
+}
+.temp-warning {
+  color: #f59e0b;
+}
+.temp-critical {
+  color: #ef4444;
+}
+
+/* RPM gauge colors */
+.rpm-normal {
+  color: #3b82f6;
+}
+.rpm-warning {
+  color: #f59e0b;
+}
+.rpm-critical {
+  color: #ef4444;
+}
+
+/* System Status */
+.system-alerts {
+  margin-bottom: 24px;
+}
+
+.status-normal {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #10b981;
+  font-weight: 500;
+}
+
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  border-left: 4px solid;
+  animation: slide-in 0.3s ease-out;
+}
+
+.alert.critical {
+  background: rgba(239, 68, 68, 0.1);
+  border-left-color: #ef4444;
+  color: #fca5a5;
+}
+
+.alert.warning {
+  background: rgba(245, 158, 11, 0.1);
+  border-left-color: #f59e0b;
+  color: #fcd34d;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.metric-box {
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid;
+}
+
+.engine-load {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+.o2-sensor {
+  background: rgba(147, 51, 234, 0.1);
+  border-color: rgba(147, 51, 234, 0.2);
+}
+
+.metric-label {
+  font-size: 0.875rem;
+  color: #9ca3af;
+  margin-bottom: 4px;
+}
+
+.metric-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.engine-load .metric-value {
+  color: #60a5fa;
+}
+
+.o2-sensor .metric-value {
+  color: #a78bfa;
+}
+
+/* Cost Analysis */
+.cost-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.cost-box {
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid;
+}
+
+.immediate-cost {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.future-cost {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.cost-label {
+  font-size: 0.875rem;
+  color: #9ca3af;
+  margin-bottom: 4px;
+}
+
+.cost-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.immediate-cost .cost-value {
+  color: #fca5a5;
+}
+
+.future-cost .cost-value {
+  color: #fcd34d;
+}
+
+.cost-breakdown {
+  margin-top: 16px;
+}
+
+.breakdown-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #d1d5db;
+  margin-bottom: 8px;
+}
+
+.cost-item {
+  background: rgba(31, 41, 55, 0.5);
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-bottom: 4px;
+  font-size: 0.875rem;
+}
+
+.cost-item-name {
+  font-weight: 500;
+  color: #f3f4f6;
+}
+
+.cost-item-amount {
+  color: #9ca3af;
+}
+
+/* Issues Panel */
+.issues-card {
+  margin-bottom: 24px;
+}
+
+.issues-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.issue-item {
+  background: rgba(31, 41, 55, 0.5);
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #4b5563;
+  transition: all 0.3s ease;
+}
+
+.issue-item:hover {
+  border-color: #6b7280;
+  transform: translateY(-1px);
+}
+
+.issue-header {
+  display: flex;
+  justify-content: between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.issue-name {
+  font-weight: 600;
+  color: #f3f4f6;
+  flex: 1;
+}
+
+.issue-badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.issue-badge.critical {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.issue-badge.warning {
+  background: #f59e0b;
+  color: #ffffff;
+}
+
+.issue-description {
+  color: #9ca3af;
+  font-size: 0.875rem;
+  margin-bottom: 16px;
+}
+
+/* .issue-costs {
+  space-y: 8px;
+} */
+
+.issue-cost-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+}
+
+.issue-cost-label {
+  color: #9ca3af;
+}
+
+.issue-cost-value {
+  color: #fca5a5;
+  font-weight: 500;
+}
+
+.issue-consequences {
+  margin-top: 12px;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.consequence-title {
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.future-cost-value {
+  color: #fcd34d;
+}
+
+/* Performance Grid */
+.performance-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.performance-card {
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.3s ease;
+  animation: fade-in 0.5s ease-out;
+}
+
+.performance-card:hover {
+  transform: translateY(-2px);
+}
+
+.fuel-efficiency {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.2));
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.system-health {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.2));
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.emissions {
+  background: linear-gradient(135deg, rgba(147, 51, 234, 0.1), rgba(147, 51, 234, 0.2));
+  border: 1px solid rgba(147, 51, 234, 0.2);
+}
+
+.maintenance {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.2));
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.performance-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.performance-icon {
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 1.5rem;
+}
+
+.fuel-efficiency .performance-icon {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+.system-health .performance-icon {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+}
+
+.emissions .performance-icon {
+  background: rgba(147, 51, 234, 0.2);
+  color: #a78bfa;
+}
+
+.maintenance .performance-icon {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+}
+
+.performance-label {
+  font-size: 0.875rem;
+  color: #9ca3af;
+  margin-bottom: 4px;
+}
+
+.performance-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.fuel-efficiency .performance-value {
+  color: #60a5fa;
+}
+
+.system-health .performance-value {
+  color: #34d399;
+}
+
+.emissions .performance-value {
+  color: #a78bfa;
+}
+
+.maintenance .performance-value {
+  color: #fbbf24;
+}
+
+/* Animations */
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes status-blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0.3;
+  }
+}
+
+.status-critical {
+  animation: status-blink 1s infinite;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .dashboard {
+    padding: 16px;
+  }
+
+  .main-title {
+    font-size: 2rem;
+  }
+
+  .header-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .gauges-container {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .performance-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .performance-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cost-grid,
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+    </style>
+
+
+
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1 class="main-title">Vehicle Monitor Pro</h1>
+                    <p class="subtitle">Real-time automotive diagnostics & predictive maintenance</p>
+                </div>
+                <div class="header-right">
+                    <div class="connection-status">
+                        <div class="status-indicator connected" id="statusIndicator"></div>
+                        <span class="status-text" id="statusText">Connected</span>
+                    </div>
+                    <div class="last-update">
+                        <i class="fas fa-clock"></i>
+                        <span id="lastUpdateTime">--:--:--</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Dashboard Grid -->
+        <div class="main-grid">
+            <!-- Engine Vitals Card -->
+            <div class="card vitals-card">
+                <div class="card-header">
+                    <i class="fas fa-heartbeat"></i>
+                    <h3>Engine Vitals</h3>
+                </div>
+                <div class="card-content">
+                    <div class="gauges-container">
+                        <div class="gauge-wrapper">
+                            <div class="gauge" id="tempGauge">
+                                <svg class="gauge-svg" viewBox="0 0 100 100">
+                                    <circle class="gauge-bg" cx="50" cy="50" r="45"></circle>
+                                    <circle class="gauge-fill" cx="50" cy="50" r="45" id="tempGaugeFill"></circle>
+                                </svg>
+                                <div class="gauge-content">
+                                    <i class="fas fa-thermometer-half gauge-icon" id="tempIcon"></i>
+                                    <div class="gauge-value" id="tempValue">85</div>
+                                    <div class="gauge-unit">°C</div>
+                                </div>
+                            </div>
+                            <div class="gauge-label">Coolant Temp</div>
+                        </div>
+
+                        <div class="gauge-wrapper">
+                            <div class="gauge" id="rpmGauge">
+                                <svg class="gauge-svg" viewBox="0 0 100 100">
+                                    <circle class="gauge-bg" cx="50" cy="50" r="45"></circle>
+                                    <circle class="gauge-fill" cx="50" cy="50" r="45" id="rpmGaugeFill"></circle>
+                                </svg>
+                                <div class="gauge-content">
+                                    <i class="fas fa-tachometer-alt gauge-icon" id="rpmIcon"></i>
+                                    <div class="gauge-value" id="rpmValue">2500</div>
+                                    <div class="gauge-unit">RPM</div>
+                                </div>
+                            </div>
+                            <div class="gauge-label">Engine RPM</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Status Card -->
+            <div class="card status-card">
+                <div class="card-header">
+                    <i class="fas fa-cogs"></i>
+                    <h3>System Status</h3>
+                </div>
+                <div class="card-content">
+                    <div id="systemAlerts" class="system-alerts">
+                        <div class="status-normal">
+                            <i class="fas fa-check-circle"></i>
+                            All systems normal
+                        </div>
+                    </div>
+
+                    <div class="metrics-grid">
+                        <div class="metric-box engine-load">
+                            <div class="metric-label">Engine Load</div>
+                            <div class="metric-value" id="engineLoadValue">45.0%</div>
+                        </div>
+                        <div class="metric-box o2-sensor">
+                            <div class="metric-label">O2 Sensor</div>
+                            <div class="metric-value" id="o2SensorValue">0.80V</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cost Analysis Card -->
+            <div class="card cost-card">
+                <div class="card-header">
+                    <i class="fas fa-rupee-sign"></i>
+                    <h3>Cost Analysis</h3>
+                </div>
+                <div class="card-content">
+                    <div class="cost-grid">
+                        <div class="cost-box immediate-cost">
+                            <div class="cost-label">Immediate Costs</div>
+                            <div class="cost-value" id="immediateCost">₹0</div>
+                        </div>
+                        <div class="cost-box future-cost">
+                            <div class="cost-label">Future Costs</div>
+                            <div class="cost-value" id="futureCost">₹0</div>
+                        </div>
+                    </div>
+
+                    <div id="costBreakdown" class="cost-breakdown" style="display: none;">
+                        <div class="breakdown-title">Cost Breakdown:</div>
+                        <div id="costItems"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Issues Panel -->
+        <div class="card issues-card" id="issuesPanel" style="display: none;">
+            <div class="card-header">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h3>Active Issues & Diagnostics</h3>
+            </div>
+            <div class="card-content">
+                <div class="issues-grid" id="issuesGrid"></div>
+            </div>
+        </div>
+
+        <!-- Performance Metrics -->
+        <div class="performance-grid">
+            <div class="performance-card fuel-efficiency">
+                <div class="performance-content">
+                    <div class="performance-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="performance-info">
+                        <div class="performance-label">Fuel Efficiency</div>
+                        <div class="performance-value" id="fuelEfficiency">25.0 km/L</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="performance-card system-health">
+                <div class="performance-content">
+                    <div class="performance-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="performance-info">
+                        <div class="performance-label">Battery Health</div>
+                        <div class="performance-value" id="systemHealth">100%</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="performance-card emissions">
+                <div class="performance-content">
+                    <div class="performance-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <div class="performance-info">
+                        <div class="performance-label">Emissions</div>
+                        <div class="performance-value" id="emissions">Normal</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="performance-card maintenance">
+                <div class="performance-content">
+                    <div class="performance-icon">
+                        <i class="fas fa-wrench"></i>
+                    </div>
+                    <div class="performance-info">
+                        <div class="performance-label">Maintenance Due</div>
+                        <div class="performance-value" id="maintenanceDue">2.5k km</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+</body>
+
+</html>
